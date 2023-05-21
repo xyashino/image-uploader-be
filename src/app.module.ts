@@ -4,6 +4,7 @@ import { ConfigModule } from '@nestjs/config';
 import { StartupService } from './startup.service';
 import { typeormConfigAsync } from './config/typeorm.config';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { ImageModule } from './image/image.module';
 
 @Module({
   imports: [
@@ -12,6 +13,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
     }),
     TypeOrmModule.forRootAsync(typeormConfigAsync),
     UploadModule,
+    ImageModule,
   ],
   providers: [StartupService],
 })
