@@ -9,4 +9,9 @@ export class Image extends BaseEntity {
     length: 255,
   })
   originalName: string;
+
+  @Column({
+    default: '',
+  })
+  filePath: string;
 }
