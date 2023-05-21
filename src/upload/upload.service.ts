@@ -1,7 +1,7 @@
 import { ConflictException, Inject, Injectable } from '@nestjs/common';
-import { randomUUID } from 'crypto';
 import { writeFile, mkdir } from 'node:fs/promises';
 import { ConfigService } from '@nestjs/config';
+import { ImageService } from '../image/image.service';
 
 const AllowedMimeTypes = [
   'image/jpeg',
@@ -16,33 +16,31 @@ export class UploadService {
   @Inject(ConfigService)
   private readonly configService: ConfigService;
 
-  async uploadFile(file: Express.Multer.File) {
-    if (!AllowedMimeTypes.includes(file.mimetype)) {
-      throw new ConflictException(`File type ${file.mimetype} not allowed`);
+  @Inject(ImageService)
+  private readonly imageService: ImageService;
+
+  async uploadFile({
+    mimetype,
+    originalname: originalName,
+    buffer,
+  }: Express.Multer.File) {
+    if (!AllowedMimeTypes.includes(mimetype)) {
+      throw new ConflictException(`File type ${mimetype} not allowed`);
     }
 
-    const uploadDir = this.configService.get<string>('UPLOAD_DIR');
-    const fileDirectory = randomUUID();
+    // Check if the upload directory   has  '/' at the end if exists remove it
+    const uploadDir = this.configService.get('UPLOAD_DIR').replace(/\/$/, '');
+    const { filePath, id } = await this.imageService.create({ originalName });
 
     try {
-      await mkdir(`${uploadDir}/${fileDirectory}`, { recursive: true });
-      await writeFile(
-        `${uploadDir}/${fileDirectory}/${file.originalname}`,
-        file.buffer,
-      );
+      await mkdir(`${uploadDir}/${id}`, { recursive: true });
+      await writeFile(`${uploadDir}${filePath}`, buffer);
     } catch (error) {
-      console.error(error);
+      await this.imageService.remove(id);
       throw new ConflictException(
         `Failed to upload the file: ${error.message}`,
       );
     }
-
-    const fileUrl = `${this.configService.get<string>(
-      'PUBLIC_HOST_URL',
-    )}/${fileDirectory}/${file.originalname}`;
-    return {
-      message: 'File uploaded successfully',
-      fileUrl,
-    };
+    return this.imageService.findOne(id);
   }
 }
