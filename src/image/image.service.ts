@@ -21,7 +21,6 @@ export class ImageService {
   }
   async findOne(id: string) {
     const foundImage = await Image.findOneBy({ id });
-    console.log(foundImage);
     if (!foundImage)
       throw new NotFoundException(`Image with #${id} id not found`);
     return foundImage;
